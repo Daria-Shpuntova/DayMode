@@ -51,11 +51,15 @@ fun DateSwitcher(
                 contentDescription = "Предыдущий день",
             )
         }
-        TextButton(onClick = onResetToToday) {
+        TextButton(
+            onClick = onResetToToday,
+            modifier = Modifier.weight(1f),
+        ) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
+                maxLines = 2,
             )
         }
         IconButton(onClick = onNext) {

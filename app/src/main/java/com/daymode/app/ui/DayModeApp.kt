@@ -1,5 +1,10 @@
 package com.daymode.app.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -14,11 +19,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -62,6 +69,23 @@ fun DayModeApp() {
 
     val completedForSelectedDay = remember(completions, selectedDate) {
         completedIdsForDate(completions, selectedDate)
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { /* scheduled by ViewModel when settings flow updates */ }
+
+    LaunchedEffect(settings.onboardingDone) {
+        if (!settings.onboardingDone) return@LaunchedEffect
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                appContext,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
 
     DayModeTheme(themeMode = settings.themeMode) {
@@ -119,8 +143,6 @@ fun DayModeApp() {
                         TodayScreen(
                             settings = settings,
                             blocks = blocks,
-                            habits = habits,
-                            completions = completions,
                             selectedDate = selectedDate,
                             onPreviousDay = { viewModel.shiftSelectedDate(-1) },
                             onNextDay = { viewModel.shiftSelectedDate(1) },
@@ -133,6 +155,7 @@ fun DayModeApp() {
                     composable(MainDest.Morning.route) {
                         MorningScreen(
                             habits = habits,
+                            completions = completions,
                             selectedDate = selectedDate,
                             completedIdsForSelectedDay = completedForSelectedDay,
                             onPreviousDay = { viewModel.shiftSelectedDate(-1) },
@@ -147,6 +170,7 @@ fun DayModeApp() {
                         EveningScreen(
                             settings = settings,
                             habits = habits,
+                            completions = completions,
                             selectedDate = selectedDate,
                             completedIdsForSelectedDay = completedForSelectedDay,
                             onPreviousDay = { viewModel.shiftSelectedDate(-1) },
@@ -160,8 +184,6 @@ fun DayModeApp() {
                     composable(MainDest.Settings.route) {
                         SettingsScreen(
                             settings = settings,
-                            habits = habits,
-                            completions = completions,
                             onThemeChange = viewModel::setTheme,
                         )
                     }
