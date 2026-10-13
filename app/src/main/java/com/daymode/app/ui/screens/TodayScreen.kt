@@ -1,6 +1,5 @@
 package com.daymode.app.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -23,11 +22,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.daymode.app.data.DayBlock
-import com.daymode.app.data.Habit
 import com.daymode.app.data.UserSettings
 import com.daymode.app.data.toClockLabel
 import com.daymode.app.ui.components.DateSwitcher
-import com.daymode.app.ui.components.SelectedDayHabitSummary
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -44,8 +41,6 @@ private data class TimelineItem(
 fun TodayScreen(
     settings: UserSettings,
     blocks: List<DayBlock>,
-    habits: List<Habit>,
-    completions: Set<String>,
     selectedDate: LocalDate,
     onPreviousDay: () -> Unit,
     onNextDay: () -> Unit,
@@ -64,6 +59,7 @@ fun TodayScreen(
 
     val dayBlocks = blocks.filter { it.occursOn(isoDay) }.sortedBy { it.startMinutes }
 
+    val scrollState = rememberScrollState()
     var showAdd by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<DayBlock?>(null) }
     var editingAnchor by remember { mutableStateOf<AnchorKind?>(null) }
@@ -144,7 +140,7 @@ fun TodayScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -167,12 +163,6 @@ fun TodayScreen(
                 "План дня: ${timeline.size} блоков"
             },
             style = MaterialTheme.typography.bodyLarge,
-        )
-
-        SelectedDayHabitSummary(
-            habits = habits,
-            completions = completions,
-            selectedDate = selectedDate,
         )
 
         Spacer(Modifier.height(4.dp))
@@ -247,9 +237,8 @@ private fun DayBlockCard(
     onClick: () -> Unit,
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

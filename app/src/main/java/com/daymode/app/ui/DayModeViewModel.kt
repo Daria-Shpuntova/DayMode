@@ -1,8 +1,11 @@
 package com.daymode.app.ui
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.daymode.app.data.BlocksRepository
 import com.daymode.app.data.DayBlock
 import com.daymode.app.data.Habit
@@ -11,20 +14,23 @@ import com.daymode.app.data.HabitsRepository
 import com.daymode.app.data.SettingsRepository
 import com.daymode.app.data.ThemeMode
 import com.daymode.app.data.UserSettings
+import com.daymode.app.notifications.NotificationScheduler
 import com.daymode.app.ui.screens.createHabit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 class DayModeViewModel(
+    application: Application,
     private val settingsRepository: SettingsRepository,
     private val blocksRepository: BlocksRepository,
     private val habitsRepository: HabitsRepository,
-) : ViewModel() {
+) : AndroidViewModel(application) {
 
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
@@ -52,6 +58,17 @@ class DayModeViewModel(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = emptySet(),
     )
+
+    init {
+        viewModelScope.launch {
+            combine(settingsRepository.settings, blocksRepository.blocks) { s, b -> s to b }
+                .collect { (s, b) ->
+                    if (s.onboardingDone) {
+                        NotificationScheduler.reschedule(getApplication(), s, b)
+                    }
+                }
+        }
+    }
 
     fun shiftSelectedDate(days: Long) {
         _selectedDate.value = _selectedDate.value.plusDays(days)
@@ -114,16 +131,11 @@ class DayModeViewModel(
             settingsRepository: SettingsRepository,
             blocksRepository: BlocksRepository,
             habitsRepository: HabitsRepository,
-        ): ViewModelProvider.Factory =
-            object : ViewModelProvider.Factory {
-                @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return DayModeViewModel(
-                        settingsRepository,
-                        blocksRepository,
-                        habitsRepository,
-                    ) as T
-                }
+        ): ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as Application
+                DayModeViewModel(app, settingsRepository, blocksRepository, habitsRepository)
             }
+        }
     }
 }

@@ -1,14 +1,18 @@
 [
     {
-        "merged": "com.daymode.app-debug-57:/drawable_ic_launcher_foreground.xml.flat",
-        "source": "com.daymode.app-main-59:/drawable/ic_launcher_foreground.xml"
+        "merged": "C:\\Users\\user\\AppData\\Local\\Temp\\cursor-sandbox-cache\\75f9f467b32ffd84ee262db646018677\\gradle\\daemon\\8.9\\com.daymode.app-debug-57:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\user\\AppData\\Local\\Temp\\cursor-sandbox-cache\\75f9f467b32ffd84ee262db646018677\\gradle\\daemon\\8.9\\com.daymode.app-main-59:\\mipmap-anydpi-v26\\ic_launcher.xml"
     },
     {
-        "merged": "com.daymode.app-debug-57:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
-        "source": "com.daymode.app-main-59:/mipmap-anydpi-v26/ic_launcher_round.xml"
+        "merged": "C:\\Users\\user\\AppData\\Local\\Temp\\cursor-sandbox-cache\\75f9f467b32ffd84ee262db646018677\\gradle\\daemon\\8.9\\com.daymode.app-debug-57:\\drawable_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\user\\AppData\\Local\\Temp\\cursor-sandbox-cache\\75f9f467b32ffd84ee262db646018677\\gradle\\daemon\\8.9\\com.daymode.app-main-59:\\drawable\\ic_launcher_foreground.xml"
     },
     {
-        "merged": "com.daymode.app-debug-57:/mipmap-anydpi-v26_ic_launcher.xml.flat",
-        "source": "com.daymode.app-main-59:/mipmap-anydpi-v26/ic_launcher.xml"
+        "merged": "C:\\Users\\user\\AppData\\Local\\Temp\\cursor-sandbox-cache\\75f9f467b32ffd84ee262db646018677\\gradle\\daemon\\8.9\\com.daymode.app-debug-57:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\user\\AppData\\Local\\Temp\\cursor-sandbox-cache\\75f9f467b32ffd84ee262db646018677\\gradle\\daemon\\8.9\\com.daymode.app-main-59:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.daymode.app-debug-57:/drawable_ic_notification.xml.flat",
+        "source": "com.daymode.app-main-59:/drawable/ic_notification.xml"
     }
 ]

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,12 +34,14 @@ import com.daymode.app.data.Habit
 import com.daymode.app.data.HabitPeriod
 import com.daymode.app.data.HabitsRepository
 import com.daymode.app.ui.components.DateSwitcher
+import com.daymode.app.ui.components.HabitStatsSection
 import java.time.LocalDate
 
 @Composable
 fun HabitsScreen(
     period: HabitPeriod,
     habits: List<Habit>,
+    completions: Set<String>,
     selectedDate: LocalDate,
     completedIdsForSelectedDay: Set<String>,
     onPreviousDay: () -> Unit,
@@ -115,6 +118,15 @@ fun HabitsScreen(
         ) {
             Text("Добавить привычку")
         }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        HabitStatsSection(
+            period = period,
+            habits = habits,
+            completions = completions,
+            selectedDate = selectedDate,
+        )
     }
 
     if (showAddDialog) {
