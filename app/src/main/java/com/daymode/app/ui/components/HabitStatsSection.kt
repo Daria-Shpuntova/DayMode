@@ -22,9 +22,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.daymode.app.data.DayHabitStat
 import com.daymode.app.data.Habit
-import com.daymode.app.data.HabitStreakStat
+import com.daymode.app.data.HabitPeriod
+import com.daymode.app.data.HabitPeriodStat
 import com.daymode.app.data.completedIdsForDate
-import com.daymode.app.data.perHabitStatsLast7
+import com.daymode.app.data.perHabitStatsForDays
 import com.daymode.app.data.weekHabitStats
 import java.time.LocalDate
 import java.time.format.TextStyle
@@ -35,12 +36,14 @@ fun SelectedDayHabitSummary(
     habits: List<Habit>,
     completions: Set<String>,
     selectedDate: LocalDate,
+    title: String = "За выбранный день",
 ) {
-    if (habits.isEmpty()) return
+    val periodHabits = habits
+    if (periodHabits.isEmpty()) return
     val done = completedIdsForDate(completions, selectedDate).count { id ->
-        habits.any { it.id == id }
+        periodHabits.any { it.id == id }
     }
-    val total = habits.size
+    val total = periodHabits.size
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -48,15 +51,14 @@ fun SelectedDayHabitSummary(
         ),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Привычки за день", style = MaterialTheme.typography.titleSmall)
+            Text(title, style = MaterialTheme.typography.titleSmall)
             Text(
                 "$done из $total",
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
             Text(
-                if (total == 0) "Добавь привычки на Утро или Вечер"
-                else "${((done * 100f) / total).toInt()}%",
+                "${((done * 100f) / total).toInt()}%",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             )
@@ -66,33 +68,47 @@ fun SelectedDayHabitSummary(
 
 @Composable
 fun HabitStatsSection(
+    period: HabitPeriod,
     habits: List<Habit>,
     completions: Set<String>,
-    endDate: LocalDate = LocalDate.now(),
+    selectedDate: LocalDate,
 ) {
-    val week = weekHabitStats(habits, completions, endDate)
-    val perHabit = perHabitStatsLast7(habits, completions, endDate)
+    val periodHabits = habits.filter { it.period == period }
+    val week = weekHabitStats(periodHabits, completions, selectedDate)
+    val weekPerHabit = perHabitStatsForDays(periodHabits, completions, days = 7, endDate = selectedDate)
+    val monthPerHabit = perHabitStatsForDays(periodHabits, completions, days = 30, endDate = selectedDate)
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Статистика привычек", style = MaterialTheme.typography.titleMedium)
-        Text(
-            "Последние 7 дней",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+        Text("Статистика · ${period.label}", style = MaterialTheme.typography.titleMedium)
+
+        SelectedDayHabitSummary(
+            habits = periodHabits,
+            completions = completions,
+            selectedDate = selectedDate,
+            title = "За выбранный день",
         )
 
-        if (habits.isEmpty()) {
-            Text("Пока нет привычек — статистика появится после добавления.")
+        if (periodHabits.isEmpty()) {
+            Text("Добавь привычки — здесь появится статистика за неделю и месяц.")
             return
         }
 
+        Text(
+            "Последние 7 дней",
+            style = MaterialTheme.typography.titleSmall,
+        )
         WeekBars(week)
 
-        Spacer(Modifier.height(4.dp))
-        Text("По привычкам", style = MaterialTheme.typography.titleSmall)
-        perHabit.forEach { stat ->
-            HabitProgressRow(stat)
-        }
+        Text("За неделю по привычкам", style = MaterialTheme.typography.titleSmall)
+        weekPerHabit.forEach { HabitProgressRow(it, suffix = "/7") }
+
+        Text("За месяц по привычкам", style = MaterialTheme.typography.titleSmall)
+        Text(
+            "Последние 30 дней",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+        )
+        monthPerHabit.forEach { HabitProgressRow(it, suffix = "/30") }
     }
 }
 
@@ -130,10 +146,13 @@ private fun WeekBars(days: List<DayHabitStat>) {
                             .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                     )
+                    val barRatio = ratio.coerceIn(0f, 1f).let {
+                        if (it == 0f && day.total > 0) 0.04f else it
+                    }
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .fillMaxHeight(ratio.coerceIn(0f, 1f).let { if (it == 0f && day.total > 0) 0.04f else it })
+                            .fillMaxHeight(barRatio)
                             .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.colorScheme.primary),
                     )
@@ -148,7 +167,7 @@ private fun WeekBars(days: List<DayHabitStat>) {
 }
 
 @Composable
-private fun HabitProgressRow(stat: HabitStreakStat) {
+private fun HabitProgressRow(stat: HabitPeriodStat, suffix: String) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -156,7 +175,7 @@ private fun HabitProgressRow(stat: HabitStreakStat) {
         ) {
             Text(stat.habit.title, style = MaterialTheme.typography.bodyMedium)
             Text(
-                "${stat.doneLast7}/7 · ${stat.percent}%",
+                "${stat.done}$suffix · ${stat.percent}%",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             )
@@ -170,7 +189,7 @@ private fun HabitProgressRow(stat: HabitStreakStat) {
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(stat.percent / 100f)
+                    .fillMaxWidth((stat.percent / 100f).coerceIn(0f, 1f))
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp))
                     .background(MaterialTheme.colorScheme.primary),

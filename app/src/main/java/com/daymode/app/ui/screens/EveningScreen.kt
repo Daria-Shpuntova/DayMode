@@ -13,6 +13,7 @@ import java.time.LocalDate
 fun EveningScreen(
     settings: UserSettings,
     habits: List<Habit>,
+    completions: Set<String>,
     selectedDate: LocalDate,
     completedIdsForSelectedDay: Set<String>,
     onPreviousDay: () -> Unit,
@@ -28,6 +29,7 @@ fun EveningScreen(
     HabitsScreen(
         period = HabitPeriod.EVENING,
         habits = habits,
+        completions = completions,
         selectedDate = selectedDate,
         completedIdsForSelectedDay = completedIdsForSelectedDay,
         onPreviousDay = onPreviousDay,

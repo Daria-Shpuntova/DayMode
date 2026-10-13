@@ -11,13 +11,13 @@ data class DayHabitStat(
         get() = if (total == 0) 0 else ((done * 100f) / total).toInt()
 }
 
-data class HabitStreakStat(
+data class HabitPeriodStat(
     val habit: Habit,
-    val doneLast7: Int,
-    val totalDays: Int = 7,
+    val done: Int,
+    val totalDays: Int,
 ) {
     val percent: Int
-        get() = if (totalDays == 0) 0 else ((doneLast7 * 100f) / totalDays).toInt()
+        get() = if (totalDays == 0) 0 else ((done * 100f) / totalDays).toInt()
 }
 
 fun completedIdsForDate(completions: Set<String>, date: LocalDate): Set<String> {
@@ -33,11 +33,6 @@ fun weekHabitStats(
     completions: Set<String>,
     endDate: LocalDate = LocalDate.now(),
 ): List<DayHabitStat> {
-    if (habits.isEmpty()) {
-        return (0..6).map { offset ->
-            DayHabitStat(date = endDate.minusDays((6 - offset).toLong()), done = 0, total = 0)
-        }
-    }
     return (0..6).map { offset ->
         val date = endDate.minusDays((6 - offset).toLong())
         val done = completedIdsForDate(completions, date).count { id ->
@@ -47,16 +42,18 @@ fun weekHabitStats(
     }
 }
 
-fun perHabitStatsLast7(
+fun perHabitStatsForDays(
     habits: List<Habit>,
     completions: Set<String>,
+    days: Int,
     endDate: LocalDate = LocalDate.now(),
-): List<HabitStreakStat> {
+): List<HabitPeriodStat> {
+    val range = (0 until days).toList()
     return habits.map { habit ->
-        val done = (0..6).count { offset ->
+        val done = range.count { offset ->
             val date = endDate.minusDays(offset.toLong())
             HabitsRepository.completionKey(habit.id, date) in completions
         }
-        HabitStreakStat(habit = habit, doneLast7 = done)
+        HabitPeriodStat(habit = habit, done = done, totalDays = days)
     }
 }
