@@ -1,6 +1,5 @@
 package com.daymode.app.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -37,16 +36,11 @@ private val DarkColors = darkColorScheme(
 
 @Composable
 fun DayModeTheme(
-    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    themeMode: ThemeMode = ThemeMode.LIGHT,
     content: @Composable () -> Unit,
 ) {
-    val darkTheme = when (themeMode) {
-        ThemeMode.SYSTEM -> isSystemInDarkTheme()
-        ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
-    }
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
+        colorScheme = if (themeMode == ThemeMode.DARK) DarkColors else LightColors,
         content = content,
     )
 }

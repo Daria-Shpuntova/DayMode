@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.daymode.app.data.toClockLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,6 +91,7 @@ fun DialTimePickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
         confirmButton = {
             TextButton(
                 onClick = { onConfirm(state.hour * 60 + state.minute) },
@@ -106,7 +108,9 @@ fun DialTimePickerDialog(
         text = {
             TimePicker(
                 state = state,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
             )
         },
     )

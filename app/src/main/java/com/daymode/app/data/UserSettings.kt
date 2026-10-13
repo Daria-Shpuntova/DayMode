@@ -15,7 +15,7 @@ data class UserSettings(
     val bedtimeMinutes: Int = 23 * 60,
     /** Minutes before bedtime for "phone-free / soon sleep" window start */
     val windDownBeforeBedMinutes: Int = 60,
-    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val themeMode: ThemeMode = ThemeMode.LIGHT,
 )
 
 fun Int.toClockLabel(): String {
