@@ -42,9 +42,10 @@ class SettingsRepository(private val context: Context) {
             workDays = if (prefs[Keys.isFiveTwo] != false) setOf(1, 2, 3, 4, 5) else days,
             bedtimeMinutes = prefs[Keys.bedtime] ?: (23 * 60),
             windDownBeforeBedMinutes = prefs[Keys.windDown] ?: 60,
-            themeMode = runCatching {
-                ThemeMode.valueOf(prefs[Keys.themeMode] ?: ThemeMode.SYSTEM.name)
-            }.getOrDefault(ThemeMode.SYSTEM),
+            themeMode = when (prefs[Keys.themeMode]) {
+                ThemeMode.DARK.name -> ThemeMode.DARK
+                else -> ThemeMode.LIGHT
+            },
         )
     }
 

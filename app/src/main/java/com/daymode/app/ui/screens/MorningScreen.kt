@@ -8,6 +8,7 @@ import java.time.LocalDate
 @Composable
 fun MorningScreen(
     habits: List<Habit>,
+    completions: Set<String>,
     selectedDate: LocalDate,
     completedIdsForSelectedDay: Set<String>,
     onPreviousDay: () -> Unit,
@@ -20,6 +21,7 @@ fun MorningScreen(
     HabitsScreen(
         period = HabitPeriod.MORNING,
         habits = habits,
+        completions = completions,
         selectedDate = selectedDate,
         completedIdsForSelectedDay = completedIdsForSelectedDay,
         onPreviousDay = onPreviousDay,
