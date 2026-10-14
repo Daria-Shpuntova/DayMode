@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.Icon
@@ -40,6 +41,7 @@ import com.daymode.app.data.completedIdsForDate
 import com.daymode.app.ui.onboarding.OnboardingScreen
 import com.daymode.app.ui.screens.EveningScreen
 import com.daymode.app.ui.screens.MorningScreen
+import com.daymode.app.ui.screens.PomodoroScreen
 import com.daymode.app.ui.screens.SettingsScreen
 import com.daymode.app.ui.screens.TodayScreen
 import com.daymode.app.ui.theme.DayModeTheme
@@ -48,6 +50,7 @@ private enum class MainDest(val route: String, val label: String) {
     Today("today", "Сегодня"),
     Morning("morning", "Утро"),
     Evening("evening", "Вечер"),
+    Focus("focus", "Фокус"),
     Settings("settings", "Ещё"),
 }
 
@@ -73,7 +76,7 @@ fun DayModeApp() {
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { /* scheduled by ViewModel when settings flow updates */ }
+    ) { }
 
     LaunchedEffect(settings.onboardingDone) {
         if (!settings.onboardingDone) return@LaunchedEffect
@@ -123,6 +126,7 @@ fun DayModeApp() {
                                             MainDest.Today -> Icons.Outlined.Today
                                             MainDest.Morning -> Icons.Outlined.WbSunny
                                             MainDest.Evening -> Icons.Outlined.Bedtime
+                                            MainDest.Focus -> Icons.Outlined.Timer
                                             MainDest.Settings -> Icons.Outlined.Settings
                                         },
                                         contentDescription = dest.label,
@@ -180,6 +184,9 @@ fun DayModeApp() {
                             onToggle = { viewModel.toggleHabit(it, selectedDate) },
                             onDelete = viewModel::deleteHabit,
                         )
+                    }
+                    composable(MainDest.Focus.route) {
+                        PomodoroScreen()
                     }
                     composable(MainDest.Settings.route) {
                         SettingsScreen(
