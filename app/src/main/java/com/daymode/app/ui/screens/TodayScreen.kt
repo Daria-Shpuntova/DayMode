@@ -23,7 +23,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.daymode.app.data.DayBlock
 import com.daymode.app.data.UserSettings
+import com.daymode.app.data.bedtimeMinutesFor
+import com.daymode.app.data.isWorkDay
+import com.daymode.app.data.scheduleLabel
 import com.daymode.app.data.toClockLabel
+import com.daymode.app.data.wakeMinutesFor
+import com.daymode.app.data.windDownStartFor
 import com.daymode.app.ui.components.DateSwitcher
 import java.time.LocalDate
 import java.time.LocalTime
@@ -53,9 +58,11 @@ fun TodayScreen(
     val isViewingToday = selectedDate == realToday
     val nowMinutes = LocalTime.now().hour * 60 + LocalTime.now().minute
     val isoDay = selectedDate.dayOfWeek.value
-    val isWorkDay = isoDay in settings.workDays
-    val windDownStart =
-        (settings.bedtimeMinutes - settings.windDownBeforeBedMinutes + 24 * 60) % (24 * 60)
+    val isWorkDay = settings.isWorkDay(selectedDate)
+    val wakeToday = settings.wakeMinutesFor(selectedDate)
+    val bedToday = settings.bedtimeMinutesFor(selectedDate)
+    val windDownStart = settings.windDownStartFor(selectedDate)
+    val dayTypeHint = if (isWorkDay) "рабочий день" else "выходной"
 
     val dayBlocks = blocks.filter { it.occursOn(isoDay) }.sortedBy { it.startMinutes }
 
@@ -67,10 +74,10 @@ fun TodayScreen(
     val timeline = buildList {
         add(
             TimelineItem(
-                sortKey = settings.wakeMinutes,
+                sortKey = wakeToday,
                 title = "Подъём",
-                time = settings.wakeMinutes.toClockLabel(),
-                hint = "нажми, чтобы изменить",
+                time = wakeToday.toClockLabel(),
+                hint = "$dayTypeHint · нажми, чтобы изменить",
                 anchor = AnchorKind.WAKE,
             ),
         )
@@ -79,7 +86,11 @@ fun TodayScreen(
                 sortKey = settings.workStartMinutes,
                 title = "Работа / учёба",
                 time = "${settings.workStartMinutes.toClockLabel()}–${settings.workEndMinutes.toClockLabel()}",
-                hint = if (isWorkDay) "нажми, чтобы изменить" else "выходной · нажми, чтобы изменить",
+                hint = if (isWorkDay) {
+                    "график ${settings.scheduleLabel()} · нажми, чтобы изменить"
+                } else {
+                    "выходной · график ${settings.scheduleLabel()} · нажми, чтобы изменить"
+                },
                 anchor = AnchorKind.WORK,
             ),
         )
@@ -105,10 +116,10 @@ fun TodayScreen(
         )
         add(
             TimelineItem(
-                sortKey = settings.bedtimeMinutes,
+                sortKey = bedToday,
                 title = "Отбой",
-                time = settings.bedtimeMinutes.toClockLabel(),
-                hint = "нажми, чтобы изменить",
+                time = bedToday.toClockLabel(),
+                hint = "$dayTypeHint · нажми, чтобы изменить",
                 anchor = AnchorKind.BEDTIME,
             ),
         )
@@ -124,7 +135,7 @@ fun TodayScreen(
         "Просмотр другого дня"
     } else {
         when {
-            nowMinutes >= settings.bedtimeMinutes || nowMinutes < settings.wakeMinutes -> "Ночь / сон"
+            nowMinutes >= bedToday || nowMinutes < wakeToday -> "Ночь / сон"
             nowMinutes >= windDownStart -> "Окно без телефона"
             dayBlocks.any {
                 nowMinutes >= it.startMinutes && (it.endMinutes == null || nowMinutes < it.endMinutes)
@@ -134,7 +145,7 @@ fun TodayScreen(
             isWorkDay &&
                 nowMinutes >= settings.workStartMinutes &&
                 nowMinutes < settings.workEndMinutes -> "Рабочий / учебный день"
-            nowMinutes >= settings.wakeMinutes -> "Утро"
+            nowMinutes >= wakeToday -> "Утро"
             else -> "День"
         }
     }

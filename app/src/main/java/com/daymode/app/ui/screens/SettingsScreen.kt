@@ -22,6 +22,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,12 +35,15 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.daymode.app.data.ThemeMode
 import com.daymode.app.data.UserSettings
+import com.daymode.app.ui.legal.LegalDocId
+import com.daymode.app.ui.legal.LegalDocuments
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     settings: UserSettings,
     onThemeChange: (ThemeMode) -> Unit,
+    onOpenLegal: (LegalDocId) -> Unit,
 ) {
     val context = LocalContext.current
     var notificationsGranted by remember {
@@ -134,11 +138,31 @@ fun SettingsScreen(
             }
         }
 
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        Text("О DayMode", style = MaterialTheme.typography.titleMedium)
         Text(
-            "Данные хранятся только на этом телефоне.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-            modifier = Modifier.padding(top = 16.dp),
+            "Версия ${LegalDocuments.APP_VERSION}. Данные только на этом телефоне.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
         )
+        TextButton(
+            onClick = { onOpenLegal(LegalDocId.ABOUT) },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("О приложении")
+        }
+        TextButton(
+            onClick = { onOpenLegal(LegalDocId.PRIVACY) },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Политика конфиденциальности")
+        }
+        TextButton(
+            onClick = { onOpenLegal(LegalDocId.TERMS) },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Пользовательское соглашение")
+        }
     }
 }
