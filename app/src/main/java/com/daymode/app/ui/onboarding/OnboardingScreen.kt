@@ -46,7 +46,8 @@ fun OnboardingScreen(
 ) {
     var step by remember { mutableIntStateOf(0) }
     var wakeMinutes by remember { mutableIntStateOf(initial.wakeMinutes) }
-    var workMinutes by remember { mutableIntStateOf(initial.workStartMinutes) }
+    var workStartMinutes by remember { mutableIntStateOf(initial.workStartMinutes) }
+    var workEndMinutes by remember { mutableIntStateOf(initial.workEndMinutes) }
     var isFiveTwo by remember { mutableStateOf(initial.isFiveTwo) }
     var workDays by remember { mutableStateOf(initial.workDays) }
     var bedMinutes by remember { mutableIntStateOf(initial.bedtimeMinutes) }
@@ -54,7 +55,7 @@ fun OnboardingScreen(
 
     val title = when (step) {
         0 -> "Во сколько встаёшь?"
-        1 -> "Начало работы или учёбы"
+        1 -> "Работа или учёба"
         2 -> "График"
         3 -> "Во сколько отбой?"
         else -> "Когда напомнить про сон?"
@@ -62,7 +63,7 @@ fun OnboardingScreen(
 
     val subtitle = when (step) {
         0 -> "Нажми на время — откроется циферблат."
-        1 -> "Позже на главной можно добавить ещё блоки."
+        1 -> "Укажи начало и окончание. Позже можно добавить ещё блоки."
         2 -> "5/2 или свои рабочие дни."
         3 -> "От этого считается вечернее окно без телефона."
         else -> "За сколько минут до отбоя прислать напоминание."
@@ -90,11 +91,18 @@ fun OnboardingScreen(
                 onMinutesChange = { wakeMinutes = it },
             )
 
-            1 -> TimePickerField(
-                label = "Начало работы / учёбы",
-                minutes = workMinutes,
-                onMinutesChange = { workMinutes = it },
-            )
+            1 -> {
+                TimePickerField(
+                    label = "Начало",
+                    minutes = workStartMinutes,
+                    onMinutesChange = { workStartMinutes = it },
+                )
+                TimePickerField(
+                    label = "Окончание",
+                    minutes = workEndMinutes,
+                    onMinutesChange = { workEndMinutes = it },
+                )
+            }
 
             2 -> {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -157,13 +165,15 @@ fun OnboardingScreen(
         Button(
             onClick = {
                 when (step) {
-                    0, 1, 3 -> step += 1
+                    0, 3 -> step += 1
+                    1 -> if (workEndMinutes > workStartMinutes) step = 2
                     2 -> if (isFiveTwo || workDays.isNotEmpty()) step = 3
                     else -> onFinished(
                         UserSettings(
                             onboardingDone = true,
                             wakeMinutes = wakeMinutes,
-                            workStartMinutes = workMinutes,
+                            workStartMinutes = workStartMinutes,
+                            workEndMinutes = workEndMinutes,
                             isFiveTwo = isFiveTwo,
                             workDays = if (isFiveTwo) setOf(1, 2, 3, 4, 5) else workDays,
                             bedtimeMinutes = bedMinutes,

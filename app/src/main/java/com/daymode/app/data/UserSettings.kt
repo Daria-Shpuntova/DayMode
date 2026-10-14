@@ -8,6 +8,7 @@ data class UserSettings(
     val onboardingDone: Boolean = false,
     val wakeMinutes: Int = 7 * 60 + 30,
     val workStartMinutes: Int = 10 * 60,
+    val workEndMinutes: Int = 14 * 60,
     /** true = Mon–Fri; false = custom [workDays] */
     val isFiveTwo: Boolean = true,
     /** ISO day numbers 1=Mon .. 7=Sun */

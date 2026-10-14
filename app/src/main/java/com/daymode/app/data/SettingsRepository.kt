@@ -19,6 +19,7 @@ class SettingsRepository(private val context: Context) {
         val onboardingDone = booleanPreferencesKey("onboarding_done")
         val wake = intPreferencesKey("wake_minutes")
         val workStart = intPreferencesKey("work_start_minutes")
+        val workEnd = intPreferencesKey("work_end_minutes")
         val isFiveTwo = booleanPreferencesKey("is_five_two")
         val workDays = stringPreferencesKey("work_days")
         val bedtime = intPreferencesKey("bedtime_minutes")
@@ -33,11 +34,14 @@ class SettingsRepository(private val context: Context) {
             ?.mapNotNull { it.toIntOrNull() }
             ?.toSet()
             ?: setOf(1, 2, 3, 4, 5)
+        val workStart = prefs[Keys.workStart] ?: (10 * 60)
+        val workEnd = prefs[Keys.workEnd] ?: (workStart + 4 * 60).coerceAtMost(23 * 60 + 59)
 
         UserSettings(
             onboardingDone = prefs[Keys.onboardingDone] ?: false,
             wakeMinutes = prefs[Keys.wake] ?: (7 * 60 + 30),
-            workStartMinutes = prefs[Keys.workStart] ?: (10 * 60),
+            workStartMinutes = workStart,
+            workEndMinutes = workEnd,
             isFiveTwo = prefs[Keys.isFiveTwo] ?: true,
             workDays = if (prefs[Keys.isFiveTwo] != false) setOf(1, 2, 3, 4, 5) else days,
             bedtimeMinutes = prefs[Keys.bedtime] ?: (23 * 60),
@@ -54,6 +58,7 @@ class SettingsRepository(private val context: Context) {
             prefs[Keys.onboardingDone] = settings.onboardingDone
             prefs[Keys.wake] = settings.wakeMinutes
             prefs[Keys.workStart] = settings.workStartMinutes
+            prefs[Keys.workEnd] = settings.workEndMinutes
             prefs[Keys.isFiveTwo] = settings.isFiveTwo
             prefs[Keys.workDays] = settings.workDays.sorted().joinToString(",")
             prefs[Keys.bedtime] = settings.bedtimeMinutes

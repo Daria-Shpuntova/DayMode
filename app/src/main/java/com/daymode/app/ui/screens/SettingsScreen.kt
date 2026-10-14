@@ -77,7 +77,7 @@ fun SettingsScreen(
 
         Text("Уведомления", style = MaterialTheme.typography.titleMedium)
         Text(
-            "За 15 минут до события и в момент начала. Подъём не напоминается.",
+            "Напоминания за 15 минут и вовремя: работа, свои дела, без телефона, сон. Подъём не напоминается.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
         )

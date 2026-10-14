@@ -46,7 +46,8 @@ fun EditAnchorSheet(
     onSave: (UserSettings) -> Unit,
 ) {
     var wake by remember { mutableIntStateOf(settings.wakeMinutes) }
-    var work by remember { mutableIntStateOf(settings.workStartMinutes) }
+    var workStart by remember { mutableIntStateOf(settings.workStartMinutes) }
+    var workEnd by remember { mutableIntStateOf(settings.workEndMinutes) }
     var bed by remember { mutableIntStateOf(settings.bedtimeMinutes) }
     var windDown by remember { mutableIntStateOf(settings.windDownBeforeBedMinutes) }
     var isFiveTwo by remember { mutableStateOf(settings.isFiveTwo) }
@@ -97,8 +98,13 @@ fun EditAnchorSheet(
                     AnchorKind.WORK -> {
                         TimePickerField(
                             label = "Начало",
-                            minutes = work,
-                            onMinutesChange = { work = it },
+                            minutes = workStart,
+                            onMinutesChange = { workStart = it },
+                        )
+                        TimePickerField(
+                            label = "Окончание",
+                            minutes = workEnd,
+                            onMinutesChange = { workEnd = it },
                         )
                         Text("График", style = MaterialTheme.typography.titleSmall)
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -169,10 +175,15 @@ fun EditAnchorSheet(
                             error = "Выбери хотя бы один день"
                             return@Button
                         }
+                        if (kind == AnchorKind.WORK && workEnd <= workStart) {
+                            error = "Окончание должно быть позже начала"
+                            return@Button
+                        }
                         onSave(
                             settings.copy(
                                 wakeMinutes = wake,
-                                workStartMinutes = work,
+                                workStartMinutes = workStart,
+                                workEndMinutes = workEnd,
                                 bedtimeMinutes = bed,
                                 windDownBeforeBedMinutes = windDown,
                                 isFiveTwo = isFiveTwo,
