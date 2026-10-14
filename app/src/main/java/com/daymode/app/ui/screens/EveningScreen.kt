@@ -6,7 +6,9 @@ import androidx.compose.runtime.Composable
 import com.daymode.app.data.Habit
 import com.daymode.app.data.HabitPeriod
 import com.daymode.app.data.UserSettings
+import com.daymode.app.data.bedtimeMinutesFor
 import com.daymode.app.data.toClockLabel
+import com.daymode.app.data.windDownStartFor
 import java.time.LocalDate
 
 @Composable
@@ -23,8 +25,8 @@ fun EveningScreen(
     onToggle: (String) -> Unit,
     onDelete: (String) -> Unit,
 ) {
-    val windDownStart =
-        (settings.bedtimeMinutes - settings.windDownBeforeBedMinutes + 24 * 60) % (24 * 60)
+    val windDownStart = settings.windDownStartFor(selectedDate)
+    val bedtime = settings.bedtimeMinutesFor(selectedDate)
 
     HabitsScreen(
         period = HabitPeriod.EVENING,
@@ -37,7 +39,7 @@ fun EveningScreen(
         onResetToToday = onResetToToday,
         headerExtra = {
             Text(
-                "Окно без телефона: с ${windDownStart.toClockLabel()} до ${settings.bedtimeMinutes.toClockLabel()}",
+                "Окно без телефона: с ${windDownStart.toClockLabel()} до ${bedtime.toClockLabel()}",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
             )

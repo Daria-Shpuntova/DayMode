@@ -38,6 +38,8 @@ import com.daymode.app.data.HabitPeriod
 import com.daymode.app.data.HabitsRepository
 import com.daymode.app.data.SettingsRepository
 import com.daymode.app.data.completedIdsForDate
+import com.daymode.app.ui.legal.LegalDocId
+import com.daymode.app.ui.legal.LegalDocumentScreen
 import com.daymode.app.ui.onboarding.OnboardingScreen
 import com.daymode.app.ui.screens.EveningScreen
 import com.daymode.app.ui.screens.MorningScreen
@@ -52,6 +54,18 @@ private enum class MainDest(val route: String, val label: String) {
     Evening("evening", "Вечер"),
     Focus("focus", "Фокус"),
     Settings("settings", "Ещё"),
+}
+
+private object LegalRoutes {
+    const val ABOUT = "legal/about"
+    const val PRIVACY = "legal/privacy"
+    const val TERMS = "legal/terms"
+
+    fun forDoc(id: LegalDocId): String = when (id) {
+        LegalDocId.ABOUT -> ABOUT
+        LegalDocId.PRIVACY -> PRIVACY
+        LegalDocId.TERMS -> TERMS
+    }
 }
 
 @Composable
@@ -105,35 +119,39 @@ fun DayModeApp() {
             val backStack by navController.currentBackStackEntryAsState()
             val currentRoute = backStack?.destination?.route
 
+            val hideBottomBar = currentRoute?.startsWith("legal/") == true
+
             Scaffold(
                 bottomBar = {
-                    NavigationBar {
-                        MainDest.entries.forEach { dest ->
-                            NavigationBarItem(
-                                selected = currentRoute == dest.route,
-                                onClick = {
-                                    navController.navigate(dest.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
+                    if (!hideBottomBar) {
+                        NavigationBar {
+                            MainDest.entries.forEach { dest ->
+                                NavigationBarItem(
+                                    selected = currentRoute == dest.route,
+                                    onClick = {
+                                        navController.navigate(dest.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
                                         }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                },
-                                icon = {
-                                    Icon(
-                                        imageVector = when (dest) {
-                                            MainDest.Today -> Icons.Outlined.Today
-                                            MainDest.Morning -> Icons.Outlined.WbSunny
-                                            MainDest.Evening -> Icons.Outlined.Bedtime
-                                            MainDest.Focus -> Icons.Outlined.Timer
-                                            MainDest.Settings -> Icons.Outlined.Settings
-                                        },
-                                        contentDescription = dest.label,
-                                    )
-                                },
-                                label = { Text(dest.label) },
-                            )
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = when (dest) {
+                                                MainDest.Today -> Icons.Outlined.Today
+                                                MainDest.Morning -> Icons.Outlined.WbSunny
+                                                MainDest.Evening -> Icons.Outlined.Bedtime
+                                                MainDest.Focus -> Icons.Outlined.Timer
+                                                MainDest.Settings -> Icons.Outlined.Settings
+                                            },
+                                            contentDescription = dest.label,
+                                        )
+                                    },
+                                    label = { Text(dest.label) },
+                                )
+                            }
                         }
                     }
                 },
@@ -192,6 +210,27 @@ fun DayModeApp() {
                         SettingsScreen(
                             settings = settings,
                             onThemeChange = viewModel::setTheme,
+                            onOpenLegal = { doc ->
+                                navController.navigate(LegalRoutes.forDoc(doc))
+                            },
+                        )
+                    }
+                    composable(LegalRoutes.ABOUT) {
+                        LegalDocumentScreen(
+                            docId = LegalDocId.ABOUT,
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+                    composable(LegalRoutes.PRIVACY) {
+                        LegalDocumentScreen(
+                            docId = LegalDocId.PRIVACY,
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+                    composable(LegalRoutes.TERMS) {
+                        LegalDocumentScreen(
+                            docId = LegalDocId.TERMS,
+                            onBack = { navController.popBackStack() },
                         )
                     }
                 }

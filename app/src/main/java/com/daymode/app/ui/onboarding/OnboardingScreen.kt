@@ -19,24 +19,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.daymode.app.data.UserSettings
+import com.daymode.app.data.WorkScheduleKind
 import com.daymode.app.data.toClockLabel
 import com.daymode.app.ui.components.TimePickerField
-
-private val dayLabels = listOf(
-    1 to "Пн",
-    2 to "Вт",
-    3 to "Ср",
-    4 to "Чт",
-    5 to "Пт",
-    6 to "Сб",
-    7 to "Вс",
-)
+import com.daymode.app.ui.components.WorkSchedulePicker
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -46,11 +39,16 @@ fun OnboardingScreen(
 ) {
     var step by remember { mutableIntStateOf(0) }
     var wakeMinutes by remember { mutableIntStateOf(initial.wakeMinutes) }
+    var restWakeMinutes by remember { mutableIntStateOf(initial.restWakeMinutes) }
     var workStartMinutes by remember { mutableIntStateOf(initial.workStartMinutes) }
     var workEndMinutes by remember { mutableIntStateOf(initial.workEndMinutes) }
-    var isFiveTwo by remember { mutableStateOf(initial.isFiveTwo) }
+    var scheduleKind by remember { mutableStateOf(initial.workScheduleKind) }
     var workDays by remember { mutableStateOf(initial.workDays) }
+    var rotateWork by remember { mutableIntStateOf(initial.rotateWorkDays) }
+    var rotateRest by remember { mutableIntStateOf(initial.rotateRestDays) }
+    var rotateAnchor by remember { mutableLongStateOf(initial.rotateAnchorEpochDay) }
     var bedMinutes by remember { mutableIntStateOf(initial.bedtimeMinutes) }
+    var restBedMinutes by remember { mutableIntStateOf(initial.restBedtimeMinutes) }
     var windDown by remember { mutableIntStateOf(initial.windDownBeforeBedMinutes) }
 
     val title = when (step) {
@@ -62,10 +60,10 @@ fun OnboardingScreen(
     }
 
     val subtitle = when (step) {
-        0 -> "Нажми на время — откроется циферблат."
+        0 -> "Отдельно для рабочего дня и выходного — по твоему графику."
         1 -> "Укажи начало и окончание. Позже можно добавить ещё блоки."
-        2 -> "5/2 или свои рабочие дни."
-        3 -> "От этого считается вечернее окно без телефона."
+        2 -> "5/2, смены 2/2, 3/3 или свои дни недели."
+        3 -> "Тоже можно по-разному в рабочие дни и выходные."
         else -> "За сколько минут до отбоя прислать напоминание."
     }
 
@@ -85,11 +83,18 @@ fun OnboardingScreen(
         )
 
         when (step) {
-            0 -> TimePickerField(
-                label = "Подъём",
-                minutes = wakeMinutes,
-                onMinutesChange = { wakeMinutes = it },
-            )
+            0 -> {
+                TimePickerField(
+                    label = "В рабочий день",
+                    minutes = wakeMinutes,
+                    onMinutesChange = { wakeMinutes = it },
+                )
+                TimePickerField(
+                    label = "В выходной",
+                    minutes = restWakeMinutes,
+                    onMinutesChange = { restWakeMinutes = it },
+                )
+            }
 
             1 -> {
                 TimePickerField(
@@ -104,42 +109,31 @@ fun OnboardingScreen(
                 )
             }
 
-            2 -> {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = isFiveTwo,
-                        onClick = {
-                            isFiveTwo = true
-                            workDays = setOf(1, 2, 3, 4, 5)
-                        },
-                        label = { Text("5/2") },
-                    )
-                    FilterChip(
-                        selected = !isFiveTwo,
-                        onClick = { isFiveTwo = false },
-                        label = { Text("Свои дни") },
-                    )
-                }
-                if (!isFiveTwo) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        dayLabels.forEach { (day, label) ->
-                            FilterChip(
-                                selected = day in workDays,
-                                onClick = {
-                                    workDays = if (day in workDays) workDays - day else workDays + day
-                                },
-                                label = { Text(label) },
-                            )
-                        }
-                    }
-                }
-            }
-
-            3 -> TimePickerField(
-                label = "Отбой",
-                minutes = bedMinutes,
-                onMinutesChange = { bedMinutes = it },
+            2 -> WorkSchedulePicker(
+                kind = scheduleKind,
+                workDays = workDays,
+                rotateWorkDays = rotateWork,
+                rotateRestDays = rotateRest,
+                rotateAnchorEpochDay = rotateAnchor,
+                onKindChange = { scheduleKind = it },
+                onWorkDaysChange = { workDays = it },
+                onRotateWorkChange = { rotateWork = it },
+                onRotateRestChange = { rotateRest = it },
+                onAnchorChange = { rotateAnchor = it },
             )
+
+            3 -> {
+                TimePickerField(
+                    label = "В рабочий день",
+                    minutes = bedMinutes,
+                    onMinutesChange = { bedMinutes = it },
+                )
+                TimePickerField(
+                    label = "В выходной",
+                    minutes = restBedMinutes,
+                    onMinutesChange = { restBedMinutes = it },
+                )
+            }
 
             else -> {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -152,8 +146,14 @@ fun OnboardingScreen(
                     }
                 }
                 Text(
-                    "Окно без телефона начнётся в ${(
+                    "В рабочий день окно с ${(
                         (bedMinutes - windDown + 24 * 60) % (24 * 60)
+                        ).toClockLabel()}",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text(
+                    "В выходной — с ${(
+                        (restBedMinutes - windDown + 24 * 60) % (24 * 60)
                         ).toClockLabel()}",
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -167,16 +167,28 @@ fun OnboardingScreen(
                 when (step) {
                     0, 3 -> step += 1
                     1 -> if (workEndMinutes > workStartMinutes) step = 2
-                    2 -> if (isFiveTwo || workDays.isNotEmpty()) step = 3
+                    2 -> {
+                        val ok = scheduleKind != WorkScheduleKind.CUSTOM_WEEK || workDays.isNotEmpty()
+                        if (ok) step = 3
+                    }
                     else -> onFinished(
                         UserSettings(
                             onboardingDone = true,
                             wakeMinutes = wakeMinutes,
+                            restWakeMinutes = restWakeMinutes,
                             workStartMinutes = workStartMinutes,
                             workEndMinutes = workEndMinutes,
-                            isFiveTwo = isFiveTwo,
-                            workDays = if (isFiveTwo) setOf(1, 2, 3, 4, 5) else workDays,
+                            workScheduleKind = scheduleKind,
+                            workDays = if (scheduleKind == WorkScheduleKind.FIVE_TWO) {
+                                setOf(1, 2, 3, 4, 5)
+                            } else {
+                                workDays
+                            },
+                            rotateWorkDays = rotateWork,
+                            rotateRestDays = rotateRest,
+                            rotateAnchorEpochDay = rotateAnchor,
                             bedtimeMinutes = bedMinutes,
+                            restBedtimeMinutes = restBedMinutes,
                             windDownBeforeBedMinutes = windDown,
                         ),
                     )

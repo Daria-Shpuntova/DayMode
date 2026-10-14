@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -27,8 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.daymode.app.data.UserSettings
+import com.daymode.app.data.WorkScheduleKind
 import com.daymode.app.data.toClockLabel
 import com.daymode.app.ui.components.TimePickerField
+import com.daymode.app.ui.components.WorkSchedulePicker
 
 enum class AnchorKind {
     WAKE,
@@ -46,12 +49,17 @@ fun EditAnchorSheet(
     onSave: (UserSettings) -> Unit,
 ) {
     var wake by remember { mutableIntStateOf(settings.wakeMinutes) }
+    var restWake by remember { mutableIntStateOf(settings.restWakeMinutes) }
     var workStart by remember { mutableIntStateOf(settings.workStartMinutes) }
     var workEnd by remember { mutableIntStateOf(settings.workEndMinutes) }
     var bed by remember { mutableIntStateOf(settings.bedtimeMinutes) }
+    var restBed by remember { mutableIntStateOf(settings.restBedtimeMinutes) }
     var windDown by remember { mutableIntStateOf(settings.windDownBeforeBedMinutes) }
-    var isFiveTwo by remember { mutableStateOf(settings.isFiveTwo) }
+    var scheduleKind by remember { mutableStateOf(settings.workScheduleKind) }
     var workDays by remember { mutableStateOf(settings.workDays) }
+    var rotateWork by remember { mutableIntStateOf(settings.rotateWorkDays) }
+    var rotateRest by remember { mutableIntStateOf(settings.rotateRestDays) }
+    var rotateAnchor by remember { mutableLongStateOf(settings.rotateAnchorEpochDay) }
     var error by remember { mutableStateOf<String?>(null) }
     val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
 
@@ -83,17 +91,28 @@ fun EditAnchorSheet(
             ) {
                 Text(title, style = MaterialTheme.typography.headlineSmall)
                 Text(
-                    "Нажми на время, чтобы открыть циферблат",
+                    when (kind) {
+                        AnchorKind.WAKE, AnchorKind.BEDTIME ->
+                            "Отдельно для рабочих дней и выходных по твоему графику"
+                        else -> "Нажми на время, чтобы открыть циферблат"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 )
 
                 when (kind) {
-                    AnchorKind.WAKE -> TimePickerField(
-                        label = "Подъём",
-                        minutes = wake,
-                        onMinutesChange = { wake = it },
-                    )
+                    AnchorKind.WAKE -> {
+                        TimePickerField(
+                            label = "В рабочий день",
+                            minutes = wake,
+                            onMinutesChange = { wake = it },
+                        )
+                        TimePickerField(
+                            label = "В выходной",
+                            minutes = restWake,
+                            onMinutesChange = { restWake = it },
+                        )
+                    }
 
                     AnchorKind.WORK -> {
                         TimePickerField(
@@ -106,39 +125,18 @@ fun EditAnchorSheet(
                             minutes = workEnd,
                             onMinutesChange = { workEnd = it },
                         )
-                        Text("График", style = MaterialTheme.typography.titleSmall)
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(
-                                selected = isFiveTwo,
-                                onClick = {
-                                    isFiveTwo = true
-                                    workDays = setOf(1, 2, 3, 4, 5)
-                                },
-                                label = { Text("5/2") },
-                            )
-                            FilterChip(
-                                selected = !isFiveTwo,
-                                onClick = { isFiveTwo = false },
-                                label = { Text("Свои дни") },
-                            )
-                        }
-                        if (!isFiveTwo) {
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf(
-                                    1 to "Пн", 2 to "Вт", 3 to "Ср", 4 to "Чт",
-                                    5 to "Пт", 6 to "Сб", 7 to "Вс",
-                                ).forEach { (day, label) ->
-                                    FilterChip(
-                                        selected = day in workDays,
-                                        onClick = {
-                                            workDays =
-                                                if (day in workDays) workDays - day else workDays + day
-                                        },
-                                        label = { Text(label) },
-                                    )
-                                }
-                            }
-                        }
+                        WorkSchedulePicker(
+                            kind = scheduleKind,
+                            workDays = workDays,
+                            rotateWorkDays = rotateWork,
+                            rotateRestDays = rotateRest,
+                            rotateAnchorEpochDay = rotateAnchor,
+                            onKindChange = { scheduleKind = it },
+                            onWorkDaysChange = { workDays = it },
+                            onRotateWorkChange = { rotateWork = it },
+                            onRotateRestChange = { rotateRest = it },
+                            onAnchorChange = { rotateAnchor = it },
+                        )
                     }
 
                     AnchorKind.WIND_DOWN -> {
@@ -153,25 +151,41 @@ fun EditAnchorSheet(
                             }
                         }
                         Text(
-                            "Сейчас окно начнётся в ${(
+                            "В рабочий день: с ${(
                                 (bed - windDown + 24 * 60) % (24 * 60)
+                                ).toClockLabel()}",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Text(
+                            "В выходной: с ${(
+                                (restBed - windDown + 24 * 60) % (24 * 60)
                                 ).toClockLabel()}",
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
 
-                    AnchorKind.BEDTIME -> TimePickerField(
-                        label = "Отбой",
-                        minutes = bed,
-                        onMinutesChange = { bed = it },
-                    )
+                    AnchorKind.BEDTIME -> {
+                        TimePickerField(
+                            label = "В рабочий день",
+                            minutes = bed,
+                            onMinutesChange = { bed = it },
+                        )
+                        TimePickerField(
+                            label = "В выходной",
+                            minutes = restBed,
+                            onMinutesChange = { restBed = it },
+                        )
+                    }
                 }
 
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
                 Button(
                     onClick = {
-                        if (kind == AnchorKind.WORK && !isFiveTwo && workDays.isEmpty()) {
+                        if (kind == AnchorKind.WORK &&
+                            scheduleKind == WorkScheduleKind.CUSTOM_WEEK &&
+                            workDays.isEmpty()
+                        ) {
                             error = "Выбери хотя бы один день"
                             return@Button
                         }
@@ -182,12 +196,21 @@ fun EditAnchorSheet(
                         onSave(
                             settings.copy(
                                 wakeMinutes = wake,
+                                restWakeMinutes = restWake,
                                 workStartMinutes = workStart,
                                 workEndMinutes = workEnd,
                                 bedtimeMinutes = bed,
+                                restBedtimeMinutes = restBed,
                                 windDownBeforeBedMinutes = windDown,
-                                isFiveTwo = isFiveTwo,
-                                workDays = if (isFiveTwo) setOf(1, 2, 3, 4, 5) else workDays,
+                                workScheduleKind = scheduleKind,
+                                workDays = if (scheduleKind == WorkScheduleKind.FIVE_TWO) {
+                                    setOf(1, 2, 3, 4, 5)
+                                } else {
+                                    workDays
+                                },
+                                rotateWorkDays = rotateWork,
+                                rotateRestDays = rotateRest,
+                                rotateAnchorEpochDay = rotateAnchor,
                             ),
                         )
                     },
