@@ -78,7 +78,7 @@ fun TodayScreen(
             TimelineItem(
                 sortKey = settings.workStartMinutes,
                 title = "Работа / учёба",
-                time = "с ${settings.workStartMinutes.toClockLabel()}",
+                time = "${settings.workStartMinutes.toClockLabel()}–${settings.workEndMinutes.toClockLabel()}",
                 hint = if (isWorkDay) "нажми, чтобы изменить" else "выходной · нажми, чтобы изменить",
                 anchor = AnchorKind.WORK,
             ),
@@ -131,7 +131,9 @@ fun TodayScreen(
             } -> dayBlocks.first {
                 nowMinutes >= it.startMinutes && (it.endMinutes == null || nowMinutes < it.endMinutes)
             }.title
-            isWorkDay && nowMinutes >= settings.workStartMinutes -> "Рабочий / учебный день"
+            isWorkDay &&
+                nowMinutes >= settings.workStartMinutes &&
+                nowMinutes < settings.workEndMinutes -> "Рабочий / учебный день"
             nowMinutes >= settings.wakeMinutes -> "Утро"
             else -> "День"
         }
