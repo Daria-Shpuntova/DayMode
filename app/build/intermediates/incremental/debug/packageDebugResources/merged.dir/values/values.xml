@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#1B4D3E</color>
+    <string name="app_name">DayMode</string>
+    <style name="Theme.DayMode" parent="android:Theme.Material.Light.NoActionBar"/>
+</resources>
