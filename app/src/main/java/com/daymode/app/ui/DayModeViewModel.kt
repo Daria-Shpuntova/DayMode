@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -35,11 +36,14 @@ class DayModeViewModel(
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
-    val settings: StateFlow<UserSettings> = settingsRepository.settings.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = UserSettings(),
-    )
+    /** null until DataStore emits — avoids flashing onboarding on every cold start */
+    val settings: StateFlow<UserSettings?> = settingsRepository.settings
+        .map { it }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = null,
+        )
 
     val blocks: StateFlow<List<DayBlock>> = blocksRepository.blocks.stateIn(
         scope = viewModelScope,
@@ -91,8 +95,9 @@ class DayModeViewModel(
     }
 
     fun setTheme(mode: ThemeMode) {
+        val current = settings.value ?: return
         viewModelScope.launch {
-            settingsRepository.save(settings.value.copy(themeMode = mode, onboardingDone = true))
+            settingsRepository.save(current.copy(themeMode = mode, onboardingDone = true))
         }
     }
 

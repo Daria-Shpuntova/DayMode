@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material.icons.outlined.WbSunny
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -24,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -37,6 +40,7 @@ import com.daymode.app.data.BlocksRepository
 import com.daymode.app.data.HabitPeriod
 import com.daymode.app.data.HabitsRepository
 import com.daymode.app.data.SettingsRepository
+import com.daymode.app.data.ThemeMode
 import com.daymode.app.data.completedIdsForDate
 import com.daymode.app.ui.legal.LegalDocId
 import com.daymode.app.ui.legal.LegalDocumentScreen
@@ -92,8 +96,8 @@ fun DayModeApp() {
         ActivityResultContracts.RequestPermission(),
     ) { }
 
-    LaunchedEffect(settings.onboardingDone) {
-        if (!settings.onboardingDone) return@LaunchedEffect
+    LaunchedEffect(settings?.onboardingDone) {
+        if (settings?.onboardingDone != true) return@LaunchedEffect
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val granted = ContextCompat.checkSelfPermission(
                 appContext,
@@ -105,11 +109,18 @@ fun DayModeApp() {
         }
     }
 
-    DayModeTheme(themeMode = settings.themeMode) {
+    DayModeTheme(themeMode = settings?.themeMode ?: ThemeMode.LIGHT) {
         Surface(modifier = Modifier.fillMaxSize()) {
-            if (!settings.onboardingDone) {
+            val loaded = settings
+            if (loaded == null) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+                return@Surface
+            }
+            if (!loaded.onboardingDone) {
                 OnboardingScreen(
-                    initial = settings,
+                    initial = loaded,
                     onFinished = { viewModel.completeOnboarding(it) },
                 )
                 return@Surface
@@ -163,7 +174,7 @@ fun DayModeApp() {
                 ) {
                     composable(MainDest.Today.route) {
                         TodayScreen(
-                            settings = settings,
+                            settings = loaded,
                             blocks = blocks,
                             selectedDate = selectedDate,
                             onPreviousDay = { viewModel.shiftSelectedDate(-1) },
@@ -190,7 +201,7 @@ fun DayModeApp() {
                     }
                     composable(MainDest.Evening.route) {
                         EveningScreen(
-                            settings = settings,
+                            settings = loaded,
                             habits = habits,
                             completions = completions,
                             selectedDate = selectedDate,
@@ -208,7 +219,7 @@ fun DayModeApp() {
                     }
                     composable(MainDest.Settings.route) {
                         SettingsScreen(
-                            settings = settings,
+                            settings = loaded,
                             onThemeChange = viewModel::setTheme,
                             onOpenLegal = { doc ->
                                 navController.navigate(LegalRoutes.forDoc(doc))
